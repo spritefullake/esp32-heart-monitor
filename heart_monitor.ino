@@ -1,12 +1,13 @@
-#include <WiFi.h>
 #include <WebServer.h>
 #include <HTTPClient.h>
+#include <ArduinoHttpClient.h>
+#include <WiFi.h>
 /* The header file containing the wifi username and password
  * Looks like this:
  * const char * networkName = "your wifi network's name";
  * const char * networkPswd = "your wifi network's password"; 
  */
-#include <Secrets.h>
+#include "Secrets.h"
 
 using pin = const int;
 
@@ -22,6 +23,9 @@ pin LED_PIN = 13;
 pin TX_PIN = 17;
 pin RX_PIN = 16;
 
+WiFiClient wifi;
+WebSocketClient ws_client = WebSocketClient(wifi,hostDomain,hostPort);
+
 void setup()
 {
   // Initilize hardware:
@@ -36,6 +40,8 @@ void setup()
   // Connect to the WiFi network (see function below loop)
   connectToWiFi(networkName, networkPswd);
 
+  //setup websockets
+
   digitalWrite(LED_PIN, LOW); // LED off
   Serial.print("Press button 0 to connect to ");
   Serial.println(hostDomain);
@@ -46,6 +52,19 @@ void loop()
   LEDTest();
   //requestURL(hostDomain, hostPort);
   auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
+
+
+  ws_client.begin();
+  while (ws_client.connected()){
+    Serial.println("WS sending");
+
+    ws_client.beginMessage(TYPE_TEXT);
+    ws_client.print("hi there");
+    ws_client.endMessage();
+
+    delay(5000);
+  }
+  
   //Serial.println(ecg);
   delay(10);
 }
@@ -91,7 +110,7 @@ void requestURL(const char * host, uint8_t port)
   Serial.println("Connecting to domain: " + String(host));
 
   HTTPClient http;
-  Serial.println("Beginning http");
+  Serial.println("[HTTP] begin...");
   http.begin(String(host));
   int httpCode = http.GET();
 
@@ -101,6 +120,29 @@ void requestURL(const char * host, uint8_t port)
   }
   else{
     Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+  http.end();
+
+}
+
+void postURL(const char * host, uint8_t port, String payload)
+{
+  printLine();
+  Serial.println("Connecting to domain: " + String(host));
+
+  HTTPClient http;
+  Serial.println("[HTTP] begin...");
+  http.begin(String(host));
+  
+  http.addHeader("Content-Type","application/x-www-form-urlencoded");
+  int httpCode = http.POST("value=22123");//"{\"value\":\"23.234\"}");
+
+  if(httpCode > 0){
+    Serial.printf("HTTP POST Code: %d\n", httpCode);
+    Serial.println(http.getString());
+  }
+  else{
+    Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
   http.end();
 
@@ -120,7 +162,7 @@ void LEDTest(){
       ; // Wait for button to be released
 
     digitalWrite(LED_PIN, HIGH); // Turn on LED
-    requestURL(hostDomain, hostPort); // Connect to server
+    postURL(hostDomain, hostPort, "Hello World here"); // Connect to server
     digitalWrite(LED_PIN, LOW); // Turn off LED
 
   }
