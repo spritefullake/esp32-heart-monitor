@@ -48,10 +48,11 @@ void setup()
   Serial.println(hostDomain);
 }
 
-const int socket_delay = 5000;
+const int socket_delay = 200;
 const int ecg_delay = 100;
 const int buffer_size = (int)(socket_delay / ecg_delay);
-String ecg_buffer = ""; 
+String ecg_buffer = "";
+int count = 0; 
 void loop()
 {
   //LEDTest();
@@ -61,29 +62,31 @@ void loop()
   while (ws_client.connected()){
     /*
     for(int i = 0; i < buffer_size; i++){
-      auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
+      
       ecg_buffer += ecg + ",";
+      //Serial.println(ecg_buffer);
       Serial.println(ecg);
       delay(ecg_delay);
-    }
-    */
+      count++;
+    }*/
     auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
     Serial.println("WS sending");
     ws_client.beginMessage(TYPE_TEXT);
     ws_client.print(ecg);
-    //ws_client.print(ecg_buffer);
     //ecg_buffer = "";
     ws_client.endMessage();
+    Serial.println(ecg);
 
     // check if a message is available to be received
     int messageSize = ws_client.parseMessage();
 
     if (messageSize > 0) {
       Serial.println("Received a message:");
-      Serial.println(ws_client.readString());
+      auto message = ws_client.readString();
+      
     }
 
-    delay(ecg_delay);
+    delay(socket_delay);
   }
   Serial.println("Disconnected :(");
   
