@@ -8,7 +8,7 @@
 const char * networkName = "your network name";
 const char * networkPswd = "your network password";
 ````
-* Find the IP address for your ESP32 device
+* Find the IP address for your computer
 There are various ways to achieve this; It will look something like: 192.168.x.xx where x are numbers.
  
 
