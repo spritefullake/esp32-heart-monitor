@@ -24,7 +24,8 @@ pin TX_PIN = 17;
 pin RX_PIN = 16;
 
 WiFiClient wifi;
-WebSocketClient ws_client = WebSocketClient(wifi,hostDomain,hostPort);
+const char * wsDomain = "192.168.1.78";
+WebSocketClient ws_client = WebSocketClient(wifi,wsDomain,3000);
 
 void setup()
 {
@@ -47,25 +48,46 @@ void setup()
   Serial.println(hostDomain);
 }
 
+const int socket_delay = 5000;
+const int ecg_delay = 100;
+const int buffer_size = (int)(socket_delay / ecg_delay);
+String ecg_buffer = ""; 
 void loop()
 {
-  LEDTest();
+  //LEDTest();
   //requestURL(hostDomain, hostPort);
-  auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
-
 
   ws_client.begin();
   while (ws_client.connected()){
+    /*
+    for(int i = 0; i < buffer_size; i++){
+      auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
+      ecg_buffer += ecg + ",";
+      Serial.println(ecg);
+      delay(ecg_delay);
+    }
+    */
+    auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
     Serial.println("WS sending");
-
     ws_client.beginMessage(TYPE_TEXT);
-    ws_client.print("hi there");
+    ws_client.print(ecg);
+    //ws_client.print(ecg_buffer);
+    //ecg_buffer = "";
     ws_client.endMessage();
 
-    delay(5000);
+    // check if a message is available to be received
+    int messageSize = ws_client.parseMessage();
+
+    if (messageSize > 0) {
+      Serial.println("Received a message:");
+      Serial.println(ws_client.readString());
+    }
+
+    delay(ecg_delay);
   }
+  Serial.println("Disconnected :(");
   
-  //Serial.println(ecg);
+  
   delay(10);
 }
 
