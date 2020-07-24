@@ -7,6 +7,7 @@
 ````
 const char * networkName = "your network name";
 const char * networkPswd = "your network password";
+const char * siteAddress = "your computer's ip address if you're running locally";
 ````
 * Find the IP address for your computer
 There are various ways to achieve this; It will look something like: 192.168.x.xx where x are numbers.

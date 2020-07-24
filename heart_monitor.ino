@@ -2,18 +2,13 @@
 #include <HTTPClient.h>
 #include <ArduinoHttpClient.h>
 #include <WiFi.h>
-/* The header file containing the wifi username and password
- * Looks like this:
- * const char * networkName = "your wifi network's name";
- * const char * networkPswd = "your wifi network's password"; 
- */
 #include "Secrets.h"
 
 using pin = const int;
 
 
 // Internet domain to request from:
-const char * hostDomain = "http://192.168.1.78:3000/"; //"example.com";
+const char * hostDomain = ("http://" + (String)siteAddress + ":3000/").c_str();
 const int hostPort = 80;
 
 //the input for the ECG data
@@ -24,7 +19,7 @@ pin TX_PIN = 17;
 pin RX_PIN = 16;
 
 WiFiClient wifi;
-const char * wsDomain = "192.168.1.78";
+const char * wsDomain = siteAddress;
 WebSocketClient ws_client = WebSocketClient(wifi,wsDomain,3000);
 
 void setup()
@@ -55,25 +50,13 @@ String ecg_buffer = "";
 int count = 0; 
 void loop()
 {
-  //LEDTest();
-  //requestURL(hostDomain, hostPort);
 
   ws_client.begin();
   while (ws_client.connected()){
-    /*
-    for(int i = 0; i < buffer_size; i++){
-      
-      ecg_buffer += ecg + ",";
-      //Serial.println(ecg_buffer);
-      Serial.println(ecg);
-      delay(ecg_delay);
-      count++;
-    }*/
     auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
     Serial.println("WS sending");
     ws_client.beginMessage(TYPE_TEXT);
     ws_client.print(ecg);
-    //ecg_buffer = "";
     ws_client.endMessage();
     Serial.println(ecg);
 
@@ -89,9 +72,12 @@ void loop()
     delay(socket_delay);
   }
   Serial.println("Disconnected :(");
+
+  auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
+  Serial.println(ecg);
   
   
-  delay(10);
+  delay(100);
 }
 
 // Read ECG from the AD8232 heart monitor
