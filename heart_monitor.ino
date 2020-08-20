@@ -21,11 +21,11 @@ pin RX_PIN = 16;
 WiFiClient wifi;
 const char * wsDomain = siteAddress;
 WebSocketClient ws_client = WebSocketClient(wifi,wsDomain,3000);
-
+const unsigned int baud_rate = 2000000;
 void setup()
 {
   // Initilize hardware:
-  Serial.begin(115200);
+  Serial.begin(baud_rate);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
   pinMode(SENSOR, INPUT);
@@ -41,24 +41,27 @@ void setup()
   digitalWrite(LED_PIN, LOW); // LED off
   Serial.print("Press button 0 to connect to ");
   Serial.println(hostDomain);
+  ws_client.begin();
 }
 
-const int socket_delay = 200;
-const int ecg_delay = 100;
+const int socket_delay = 10;
+const int ecg_delay = 30;
 const int buffer_size = (int)(socket_delay / ecg_delay);
 String ecg_buffer = "";
 int count = 0; 
 void loop()
 {
 
-  ws_client.begin();
+  
   while (ws_client.connected()){
     auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
+
+    Serial.println(ecg);
+    
     Serial.println("WS sending");
     ws_client.beginMessage(TYPE_TEXT);
     ws_client.print(ecg);
     ws_client.endMessage();
-    Serial.println(ecg);
 
     // check if a message is available to be received
     int messageSize = ws_client.parseMessage();
@@ -72,12 +75,13 @@ void loop()
     delay(socket_delay);
   }
   Serial.println("Disconnected :(");
-
+  Serial.println("Trying reconnect");
+  ws_client.begin();
   auto ecg = readECG(TX_PIN, RX_PIN, SENSOR);
   Serial.println(ecg);
   
   
-  delay(100);
+  delay(ecg_delay);
 }
 
 // Read ECG from the AD8232 heart monitor
